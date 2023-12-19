@@ -89,13 +89,11 @@ const parseMapString = (mapStrings: string) => {
 const getValueFromMap = (value: number, map: IMap) => {
   const mapEntry = map.entries.find(
     (entry) =>
-      value >= entry.srcStart && value <= entry.srcStart + entry.rangeLength,
+      value >= entry.srcStart && value < entry.srcStart + entry.rangeLength,
   );
 
   if (!mapEntry) return value;
-  const offset = value - mapEntry.srcStart;
-  const dst = mapEntry.dstStart + offset;
-  return dst;
+  return mapEntry.dstStart + (value - mapEntry.srcStart);
 };
 
 const getLocationFromSeed = (seed: number, maps: IMap[]) => {
@@ -108,7 +106,7 @@ const getLocationFromSeed = (seed: number, maps: IMap[]) => {
     currentMap = maps.find((map) => map.from === currentMap.to)!;
   }
 
-  return { seed, location: currentValue };
+  return { seed, location: getValueFromMap(currentValue, currentMap) };
 };
 
 const part1 = (input: string) => {
