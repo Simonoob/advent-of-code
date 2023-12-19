@@ -184,13 +184,25 @@ const part2 = (input: string) => {
   // // parse all the maps
   const maps: IMap[] = sections.map((sect) => parseMapString(sect));
 
-  for (let location = 0; ; location++) {
-    const seed = getSeedByLocation(location, maps);
+  const locationMap = maps.find((map) => map.to === "location")!;
+  locationMap.entries.sort((a, b) => a.dstStart - b.dstStart);
 
-    if (isSeedPresent(seed, seedRanges)) {
-      return location;
+  let res: number | undefined;
+  locationMap.entries.forEach((entry) => {
+    if (res) return;
+    for (
+      let location = entry.dstStart;
+      location < entry.dstStart + entry.rangeLength;
+      location++
+    ) {
+      const seed = getSeedByLocation(location, maps);
+
+      if (isSeedPresent(seed, seedRanges)) {
+        return (res = location);
+      }
     }
-  }
+  });
+  return res;
 };
 
 console.log("part 2:");
