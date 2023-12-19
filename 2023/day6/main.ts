@@ -69,13 +69,31 @@ console.log("-------------------------------");
 console.log("input data:", part1(text));
 console.log("-------------------------------");
 
-// const part2 = (input: string) => {
-//   const lines = input.split("\n");
+const parseSingleRace = (input: string) => {
+  const lines = input.split("\n");
+  const timeString = lines[0]!.split("Time:")[1].trim();
+  const distanceString = lines[1]!.split("Distance:")[1].trim();
 
-// };
+  const timeValue = parseInt(timeString.replace(/\s+/g, ""));
+  const distanceValue = parseInt(distanceString.replace(/\s+/g, ""));
 
-// console.log("part 2:");
-// console.log("sample data:", part2(sample));
-// console.log("-------------------------------");
-// console.log("input data:", part2(text));
-// console.log("-------------------------------");
+  const race: IRace = {
+    availableTime: timeValue,
+    minDistance: distanceValue,
+  };
+  return race;
+};
+
+const part2 = (input: string) => {
+  const race = parseSingleRace(input);
+  console.log(race);
+
+  // for each race, we need to record the possible winning strategies
+  return getWinningStrategies(race).length;
+};
+
+console.log("part 2:");
+console.log("sample data:", part2(sample));
+console.log("-------------------------------");
+console.log("input data:", part2(text));
+console.log("-------------------------------");
