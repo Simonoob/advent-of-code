@@ -146,27 +146,55 @@ const parseSeedsRange = (line: string) =>
       };
     });
 
+const getSrcFromMap = (dst: number, map: IMap) => {
+  const mapEntry = map.entries.find(
+    ({ dstStart, rangeLength }) =>
+      dst >= dstStart && dst <= dstStart + rangeLength,
+  );
+
+  if (!mapEntry) {
+    return dst;
+  }
+
+  const offset = dst - mapEntry.dstStart;
+  const src = mapEntry.srcStart + offset;
+  return src;
+};
+
+const getSeedByLocation = (location: number, maps: IMap[]) => {
+  return [...maps]
+    .reverse()
+    .reduce((src, map) => getSrcFromMap(src, map), location);
+};
+
+const isSeedPresent = (
+  seed: number,
+  seedRanges: { start: number; rangeLength: number }[],
+) =>
+  seedRanges.some(
+    ({ start, rangeLength }) => start <= seed && seed < start + rangeLength,
+  );
+
 const part2 = (input: string) => {
   // lets split the text in the different inputs
   const sections = splitOnEmptyLines(input);
   // get seeds starting point
-  const seeds = parseSeedsRange(sections[0]);
-  console.log(seeds);
+  const seedRanges = parseSeedsRange(sections[0])!;
   // sections.splice(0, 1);
   // // parse all the maps
-  // const maps: IMap[] = sections.map((sect) => parseMapString(sect));
+  const maps: IMap[] = sections.map((sect) => parseMapString(sect));
 
-  // // make a new map: seed to location
-  // const seedToLocation: { seed: number; location: number }[] = seeds.map(
-  //   (seed) => getLocationFromSeed(seed, maps),
-  // );
-  // console.log(seedToLocation);
+  for (let location = 0; ; location++) {
+    const seed = getSeedByLocation(location, maps);
 
-  // return Math.min(...seedToLocation.map((val) => val.location));
+    if (isSeedPresent(seed, seedRanges)) {
+      return location;
+    }
+  }
 };
 
 console.log("part 2:");
 console.log("sample data:", part2(sample));
 console.log("-------------------------------");
-// console.log("input data:", part2(text));
-// console.log("-------------------------------");
+console.log("input data:", part2(text));
+console.log("-------------------------------");
