@@ -33,22 +33,15 @@ temperature-to-humidity map:
 humidity-to-location map:
 60 56 37
 56 93 4`;
-
-interface IMapValue {
-  source: {
-    min: number;
-    max: number;
-  };
-  destination: {
-    min: number;
-    max: number;
-  };
+interface IRange {
+  srcStart: number;
+  dstStart: number;
+  rangeLength: number;
 }
-
 interface IMap {
   from: string;
   to: string;
-  values: IMapValue[];
+  entries: IRange[];
 }
 
 const splitOnEmptyLines = (input: string) => input.split(/\n\n/);
@@ -62,21 +55,14 @@ const parseSeedsString = (line: string) =>
 
 const parseRange = (line: string) => {
   const numbers = line.trim().split(/\s+/);
-  const destStart = parseInt(numbers[0]);
-  const sourceStart = parseInt(numbers[1]);
-  const length = parseInt(numbers[2]);
-  const range: IMapValue = {
-    source: {
-      min: sourceStart,
-      max: sourceStart + length - 1,
-    },
-    destination: {
-      min: destStart,
-      max: destStart + length - 1,
-    },
+  const dstStart = parseInt(numbers[0]);
+  const srcStart = parseInt(numbers[1]);
+  const rangeLength = parseInt(numbers[2]);
+  return {
+    srcStart,
+    dstStart,
+    rangeLength,
   };
-
-  return range;
 };
 
 const parseMapString = (mapStrings: string) => {
@@ -84,7 +70,7 @@ const parseMapString = (mapStrings: string) => {
   const res: IMap = {
     from: "",
     to: "",
-    values: [],
+    entries: [],
   };
 
   //parse title
@@ -95,85 +81,52 @@ const parseMapString = (mapStrings: string) => {
   //parse ranges
   lines.splice(0, 1);
   const ranges = lines.map((line) => parseRange(line));
-  res.values = ranges.flat();
+  res.entries = ranges.flat();
 
   return res;
 };
 
-const isValueWithinRange = (
-  value: number,
-  range: { min: number; max: number },
-) => range.min <= value && value <= range.max;
+const getValueFromMap = (value: number, map: IMap) => {
+  const mapEntry = map.entries.find(
+    (entry) =>
+      value >= entry.srcStart && value <= entry.srcStart + entry.rangeLength,
+  );
 
-const getValueInDestinationRange = (value: number, range?: IMapValue) => {
-  if (!range) return value;
-
-  const diff = value - range.source.min;
-  return range.destination.min + diff;
+  if (!mapEntry) return value;
+  const offset = value - mapEntry.srcStart;
+  const dst = mapEntry.dstStart + offset;
+  return dst;
 };
 
-const parseLocationValue = (seed: number, maps: { [source: string]: IMap }) => {
-  let currentMap: IMap = maps["seed"];
+const getLocationFromSeed = (seed: number, maps: IMap[]) => {
+  const initialMap = maps.find((map) => map.from === "seed")!;
+
+  let currentMap = initialMap;
   let currentValue = seed;
-
   while (currentMap.to !== "location") {
-    const destinationRange = currentMap.values.find((value) =>
-      isValueWithinRange(currentValue, value.source),
-    );
-
-    // console.log(
-    //   currentMap.from,
-    //   currentValue,
-    //   " corresponds to ",
-    //   currentMap.to,
-    //   getValueInDestinationRange(currentValue, destinationRange),
-    // );
-    currentValue = getValueInDestinationRange(currentValue, destinationRange);
-    currentMap = maps[currentMap.to];
+    currentValue = getValueFromMap(currentValue, currentMap);
+    currentMap = maps.find((map) => map.from === currentMap.to)!;
   }
 
-  // we reached the location map
-
-  const finalDestinationRange = currentMap.values.find((value) =>
-    isValueWithinRange(currentValue, value.source),
-  );
-
-  const finalValueDestination = getValueInDestinationRange(
-    currentValue,
-    finalDestinationRange,
-  );
-  return {
-    source: seed,
-    destination: finalValueDestination ?? currentValue,
-  };
+  return { seed, location: currentValue };
 };
 
 const part1 = (input: string) => {
   // lets split the text in the different inputs
   const sections = splitOnEmptyLines(input);
-  console.log("sections splitted");
-
   // get seeds starting point
   const seeds = parseSeedsString(sections[0]);
   sections.splice(0, 1);
-
   // parse all the maps
-  const maps: { [source: string]: IMap } = {};
-  console.log("about to pase maps");
-  sections.forEach((sect) => {
-    const parsed = parseMapString(sect);
-    maps[parsed.from] = parsed;
-  });
-
-  console.log("maps parsed");
+  const maps: IMap[] = sections.map((sect) => parseMapString(sect));
 
   // make a new map: seed to location
-  // to do this, we need to chain through the other maps in sequence
-  const seedToLocation: { source: number; destination: number }[] = [];
-  seeds.forEach((seed) => seedToLocation.push(parseLocationValue(seed, maps)));
+  const seedToLocation: { seed: number; location: number }[] = seeds.map(
+    (seed) => getLocationFromSeed(seed, maps),
+  );
   console.log(seedToLocation);
 
-  return seedToLocation.map((val) => val.destination).sort()[0];
+  return Math.min(...seedToLocation.map((val) => val.location));
 };
 
 console.log("part 1:");
