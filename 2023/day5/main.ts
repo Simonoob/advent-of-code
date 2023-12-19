@@ -127,18 +127,46 @@ const part1 = (input: string) => {
   return Math.min(...seedToLocation.map((val) => val.location));
 };
 
-console.log("part 1:");
-console.log("sample data:", part1(sample));
-console.log("-------------------------------");
-console.log("input data:", part1(text));
-console.log("-------------------------------");
-
-// const part2 = (input: string) => {
-//   const lines = input.split("\n");
-// };
-
-// console.log("part 2:");
-// console.log("sample data:", part2(sample));
+// console.log("part 1:");
+// console.log("sample data:", part1(sample));
 // console.log("-------------------------------");
+// console.log("input data:", part1(text));
+// console.log("-------------------------------");
+
+const parseSeedsRange = (line: string) =>
+  line
+    .replace(new RegExp(/\w+:/), "")
+    .trim()
+    .match(new RegExp(/\d+\s+\d+/g))
+    ?.map((pair) => {
+      const items = pair.split(/\s+/).map((item) => parseInt(item));
+      return {
+        start: items[0],
+        rangeLength: items[1],
+      };
+    });
+
+const part2 = (input: string) => {
+  // lets split the text in the different inputs
+  const sections = splitOnEmptyLines(input);
+  // get seeds starting point
+  const seeds = parseSeedsRange(sections[0]);
+  console.log(seeds);
+  // sections.splice(0, 1);
+  // // parse all the maps
+  // const maps: IMap[] = sections.map((sect) => parseMapString(sect));
+
+  // // make a new map: seed to location
+  // const seedToLocation: { seed: number; location: number }[] = seeds.map(
+  //   (seed) => getLocationFromSeed(seed, maps),
+  // );
+  // console.log(seedToLocation);
+
+  // return Math.min(...seedToLocation.map((val) => val.location));
+};
+
+console.log("part 2:");
+console.log("sample data:", part2(sample));
+console.log("-------------------------------");
 // console.log("input data:", part2(text));
 // console.log("-------------------------------");
