@@ -78,36 +78,41 @@ const sample2 = `LR
 22Z = (22B, 22B)
 XXX = (XXX, XXX)`;
 
-const walk2 = (instructions: string, nodes: INode[]) => {
-  const startTime = Date.now();
-
+const walkSingle2 = (
+  instructions: string,
+  nodes: INode[],
+  startingNode: INode,
+) => {
   let currentIndex = 0;
   let walkedSteps = 0;
-  const startingNodes = nodes.filter((node) => node.id.endsWith("A"))!;
-  let currentNodes = startingNodes;
-  // console.log({ instructions });
+  let currentNode = startingNode;
 
-  while (currentNodes.some((node) => !node.id.endsWith("Z"))) {
+  while (!currentNode.id.endsWith("Z")) {
     const direction = instructions[currentIndex] === "L" ? "left" : "right";
-    // console.log(
-    //   { walkedSteps },
-    //   { currentIndex },
-    //   { direction },
-    //   { currentNode },
-    // );
-
-    if ((startTime - Date.now()) % (1000 * 5) === 0)
-      console.log("walked", walkedSteps, "steps");
-
-    currentNodes = currentNodes.map(
-      (currentNode) =>
-        nodes.find((node) => node.id === currentNode[direction])!,
-    );
+    currentNode = nodes.find((node) => node.id === currentNode[direction])!;
 
     walkedSteps += 1;
     currentIndex = (currentIndex + 1) % instructions.length;
   }
   return walkedSteps;
+};
+
+function leastCommonMultiplier(arr: number[]): number {
+  // I cheated here, got this from another answer shame on me and my family
+  return arr.reduce((acc, n) => (acc * n) / greatestCommonDivider(acc, n));
+}
+
+function greatestCommonDivider(a: number, b: number): number {
+  return b === 0 ? a : greatestCommonDivider(b, a % b);
+}
+
+const walk2 = (instructions: string, nodes: INode[]) => {
+  const startingNodes = nodes.filter((node) => node.id.endsWith("A"))!;
+  let cycles = startingNodes.map((node) =>
+    walkSingle2(instructions, nodes, node),
+  );
+
+  return leastCommonMultiplier(cycles);
 };
 
 const part2 = (input: string) => {
